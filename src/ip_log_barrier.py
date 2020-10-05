@@ -3,7 +3,6 @@
 
 import autograd as ag
 import autograd.numpy as np
-import numpy.linalg as linalg
 
 #system: kkt_matrix * [delta_x, delta_v].T = hht_rhs
 def kkt_matrix(f, A, b, x, v):
