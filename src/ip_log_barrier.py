@@ -85,7 +85,7 @@ def f_augment(f_obj, f_ineq, t):
         return t * f_obj(x) - np.sum(np.log(-f_ineq(x)))
     return f_new
 
-def solve(f_obj, f_ineq, A, b, x0, it=20):
+def solve(f_obj, f_ineq, A, b, x0, it=20, eps=1e-9):
     """
     solves min_x f(x) s.t. f_ineq(x) <= 0, A(x) = b
     """
@@ -120,7 +120,7 @@ def solve(f_obj, f_ineq, A, b, x0, it=20):
 
     while True:
         f_aug = f_augment(f_obj, f_ineq, t)
-        x, v = solve_inner(f_aug, A, b, x, v, it, 1e-6, 1e-6)
+        x, v = solve_inner(f_aug, A, b, x, v, it, eps, eps)
         if m/t <= eps:
             break
         t = mu * t
