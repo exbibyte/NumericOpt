@@ -1,4 +1,5 @@
-#import cvxpy as cp
+#interior point, log barrier implementation
+
 import autograd as ag
 import autograd.numpy as np
 import numpy.linalg as linalg
