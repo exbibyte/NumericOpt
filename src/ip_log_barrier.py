@@ -36,12 +36,12 @@ def residual(f, A, b, x, v):
         [ag.grad(f)(x) + np.dot(A.T, v),
          np.dot(A, x)-b])
 
-def line_search(f, x, v, delta_x, delta_v, iter_max=50):
+def line_search(f, A, b, x, v, delta_x, delta_v, iter_max=50):
     
     beta = 0.97
     alpha = 0.4
     t = 1.
-
+    
     r = residual(f, A, b, x+t*delta_x, v + t*delta_v)
     r0 = residual(f, A, b, x, v)
 
@@ -54,7 +54,7 @@ def line_search(f, x, v, delta_x, delta_v, iter_max=50):
     return t
 
 def solve_inner(f, A, b, x, v, it=20, eps1=1e-9, eps2=1e-9):
-
+    
     i = 0
     while i<it:
         
@@ -63,7 +63,7 @@ def solve_inner(f, A, b, x, v, it=20, eps1=1e-9, eps2=1e-9):
         delta_x = delta[0:x.shape[0], :]
         delta_v = delta[x.shape[0]:, :]
         
-        t = line_search(f, x, v, delta_x, delta_v)
+        t = line_search(f, A, b, x, v, delta_x, delta_v)
         
         x = x + t * delta_x
         v = v + t * delta_v
@@ -84,7 +84,7 @@ def f_augment(f_obj, f_ineq, t):
         return t * f_obj(x) - np.sum(np.log(-f_ineq(x)))
     return f_new
 
-def solve(f_obj, f_ineq, A, b, it=20):
+def solve(f_obj, f_ineq, A, b, x0, it=20):
     """
     solves min_x f(x) s.t. f_ineq(x) <= 0, A(x) = b
     """
@@ -93,7 +93,28 @@ def solve(f_obj, f_ineq, A, b, it=20):
     m = A.shape[0]
     eps = 1e-9
 
-    x = np.ones((A.shape[1], 1))
+    x = x0
+
+    #check f_ineq constraints
+    if not np.all(f_ineq(x)<=0):
+        #solve for min a s.t. f_ineq(x) <= a
+        #check if a <=0
+        def f_obj_aux(x):
+            return x[0,0]
+        def f_ineq_aux(x):
+            return x[1:,0] - x[0,0]
+
+        v_max = np.amax(x) + 1.
+        xx = np.concatenate([[[v_max]], x])
+        A_aux = np.zeros((A.shape[0], A.shape[1]+1))
+        A_aux[:, 1:] = A
+        b_aux = b
+        xx_soln,_,_,_ = solve(f_obj_aux, f_ineq_aux, A_aux, b_aux, xx)
+        if xx[0,0] > 0:
+            return None
+        else:
+            x = xx[1:,0] #set initial starting point
+
     v = np.zeros((A.shape[0], 1)) #dual variable
 
     while True:
@@ -121,17 +142,20 @@ if __name__ == "__main__":
     #equality constraint: Ax = b
     A = np.array([[1., 1., 0.], [0., 1., 1.]]);
     b = np.array([[1.], [2.]]);
-    x = np.ones((3,1))
-
-    soln, dual, res, feas_err = solve(my_f_obj, my_f_ineq, A, b)
-
-    print("objective achieved: ", my_f_obj(soln))
-    print("solution: ")
-    print(soln)
-    print("dual: ")
-    print(dual)
-    print("residual: ", res)
-    print("equality error: ", feas_err)
+    x0 = 2. * np.ones((3,1))
     
-    assert(np.all(soln<=10.))
-    np.all(np.abs(np.dot(A,x)-b) < 1e-7)
+    ret = solve(my_f_obj, my_f_ineq, A, b, x0)
+    
+    if ret is not None:
+        (soln, dual, res, feas_err) = ret
+        print("objective achieved: ", my_f_obj(soln))
+        print("solution: ")
+        print(soln)
+        print("dual: ")
+        print(dual)
+        print("residual: ", res)
+        print("equality constraint error: ", feas_err)
+        assert(np.all(soln<=10.))
+        np.all(np.abs(np.dot(A,soln)-b) < 1e-7)
+    else:
+        print("infeasible")
