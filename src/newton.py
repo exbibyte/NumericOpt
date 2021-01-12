@@ -11,7 +11,7 @@ def line_search(f, df, x, d, iter_max=50):
     i = 0.
     df_x, f_x = df(x), f(x)
 
-    while f(x+s*d) >= f_x + alpha * s * np.dot(df_x.T, d) and i < iter_max:
+    while f(x + s * d) >= f_x + alpha * s * np.dot(df_x.T, d) and i < iter_max:
         s *= beta
         i += 1
     return s
@@ -62,4 +62,4 @@ if __name__ == "__main__":
 
     print(f"ret: {ret}, f_x_star: {f}")
 
-    assert abs(f-10.) < 1e-9
+    assert abs(f - 10.) < 1e-9
