@@ -27,18 +27,20 @@ def solve(f, x0, eps=1e-8, it_max=200):
         # augment hessian to be PD
         hess = np.squeeze(dff(x))
         eig_min = np.amin(np.linalg.eig(hess)[0])
-        hess = hess if eig_min > 0 else hess + (eig_min + 0.001) * np.eye(hess.shape[0])
+        hess += max(0., -eig_min + 0.001) * np.eye(hess.shape[0])
             
         direction = np.dot(np.linalg.inv(hess), -df(x))
         s = line_search(f, df, x, direction)
         xx = x + s * direction
         f_eval_xx, f_eval_x = f(xx), f(x)
         d_f_eval = f_eval_xx - f_eval_x
+        
         x = xx
-        print(f"iter: {it}, f(x): {f_eval_xx}")
         it += 1
+
         if d_f_eval_prev is not None and abs(d_f_eval / d_f_eval_prev) < eps:
             break
+        
         d_f_eval_prev = d_f_eval
 
     return x, f_eval_xx, it
