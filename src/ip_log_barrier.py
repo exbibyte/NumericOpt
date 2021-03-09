@@ -4,16 +4,16 @@
 import autograd as ag
 import autograd.numpy as np
 
-#system: kkt_matrix * [delta_x, delta_v].T = hht_rhs
+# system: kkt_matrix * [delta_x, delta_v].T = hht_rhs
 
 
 def kkt_matrix(f, A, b, x, v):
 
     d = x.shape[0] + A.shape[0]
     m = np.zeros((d, d))
-    m[0:x.shape[0], 0:x.shape[0]] = np.squeeze(ag.hessian(f)(x))
-    m[x.shape[0]:x.shape[0] + A.shape[0], 0:A.shape[1]] = A
-    m[0:A.shape[1], x.shape[0]:x.shape[0] + A.shape[0]] = A.T
+    m[0 : x.shape[0], 0 : x.shape[0]] = np.squeeze(ag.hessian(f)(x))
+    m[x.shape[0] : x.shape[0] + A.shape[0], 0 : A.shape[1]] = A
+    m[0 : A.shape[1], x.shape[0] : x.shape[0] + A.shape[0]] = A.T
 
     return m
 
@@ -22,8 +22,8 @@ def kkt_rhs(f, A, b, x, v):
 
     r = np.zeros((x.shape[0] + A.shape[0], 1))
     g = ag.grad(f)(x) + np.dot(A.T, v)
-    r[0:x.shape[0], :] = -g
-    r[x.shape[0]:, :] = b - A.dot(x)
+    r[0 : x.shape[0], :] = -g
+    r[x.shape[0] :, :] = b - A.dot(x)
 
     return r
 
@@ -37,23 +37,20 @@ def solve_kkt(f, A, b, x, v):
 
 
 def residual(f, A, b, x, v):
-    return np.concatenate(
-        [ag.grad(f)(x) + np.dot(A.T, v),
-         np.dot(A, x) - b])
+    return np.concatenate([ag.grad(f)(x) + np.dot(A.T, v), np.dot(A, x) - b])
 
 
 def line_search(f, A, b, x, v, delta_x, delta_v, iter_max=50):
 
     beta = 0.97
     alpha = 0.4
-    t = 1.
+    t = 1.0
 
     r = residual(f, A, b, x + t * delta_x, v + t * delta_v)
     r0 = residual(f, A, b, x, v)
 
     i = 0
-    while np.dot(r.T, r) > (1. - alpha * t) * \
-            np.dot(r0.T, r0) and i < iter_max:
+    while np.dot(r.T, r) > (1.0 - alpha * t) * np.dot(r0.T, r0) and i < iter_max:
         t = t * beta
         r = residual(f, A, b, x + t * delta_x, v + t * delta_v)
         i += 1
@@ -68,8 +65,8 @@ def solve_inner(f, A, b, x, v, it=20, eps1=1e-9, eps2=1e-9):
 
         delta = solve_kkt(f, A, b, x, v)
 
-        delta_x = delta[0:x.shape[0], :]
-        delta_v = delta[x.shape[0]:, :]
+        delta_x = delta[0 : x.shape[0], :]
+        delta_v = delta[x.shape[0] :, :]
 
         t = line_search(f, A, b, x, v, delta_x, delta_v)
 
@@ -91,6 +88,7 @@ def solve_inner(f, A, b, x, v, it=20, eps1=1e-9, eps2=1e-9):
 def f_augment(f_obj, f_ineq, t):
     def f_new(x):
         return t * f_obj(x) - np.sum(np.log(-f_ineq(x)))
+
     return f_new
 
 
@@ -115,7 +113,7 @@ def solve(f_obj, f_ineq, A, b, x0, it=20, eps=1e-9):
         def f_ineq_aux(x):
             return x[1:, 0] - x[0, 0]
 
-        v_max = np.amax(x) + 1.
+        v_max = np.amax(x) + 1.0
         xx = np.concatenate([[[v_max]], x])
         A_aux = np.zeros((A.shape[0], A.shape[1] + 1))
         A_aux[:, 1:] = A
@@ -145,16 +143,16 @@ if __name__ == "__main__":
 
     # objective
     def my_f_obj(x):
-        return x[0, 0] * x[0, 0] + x[1, 0] * x[1, 0] + x[2, 0] * x[2, 0] * 4.
+        return x[0, 0] * x[0, 0] + x[1, 0] * x[1, 0] + x[2, 0] * x[2, 0] * 4.0
 
     # inequality constraint: Ix <= 10
     def my_f_ineq(x):
-        return x - 10.
+        return x - 10.0
 
     # equality constraint: Ax = b
-    A = np.array([[1., 1., 0.], [0., 1., 1.]])
-    b = np.array([[1.], [2.]])
-    x0 = 2. * np.ones((3, 1))
+    A = np.array([[1.0, 1.0, 0.0], [0.0, 1.0, 1.0]])
+    b = np.array([[1.0], [2.0]])
+    x0 = 2.0 * np.ones((3, 1))
 
     ret = solve(my_f_obj, my_f_ineq, A, b, x0)
 
@@ -167,7 +165,7 @@ if __name__ == "__main__":
         print(dual)
         print("residual: ", res)
         print("equality constraint error: ", feas_err)
-        assert(np.all(soln <= 10.))
+        assert np.all(soln <= 10.0)
         np.all(np.abs(np.dot(A, soln) - b) < 1e-7)
     else:
         print("infeasible")
